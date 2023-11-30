@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "aoc_2022_01",
-    "aoc_2022_02",
-    "aoc_2022_03",
-    "aoc_2022_04",
-    "aoc_2022_05",
+    "aoc_2022_*",
 ]
+
+[workspace.dependencies]
+nom = "7.1.3"
+
