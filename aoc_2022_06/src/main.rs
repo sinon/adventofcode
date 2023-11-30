@@ -1,28 +1,33 @@
+use std::collections::VecDeque;
+
 fn main() {
     let lines = include_str!("./input.txt").lines().next().unwrap();
-    let out = find_packet_marker(lines);
+    let out = find_packet_marker(lines, 4);
     println!("Part 1 Answer: {:}", out);
+    let out = find_packet_marker(lines, 14);
+    println!("Part 2 Answer: {:}", out);
 }
 
-fn find_packet_marker(data: &str) -> i32 {
-    let (first_4, rest) = data.split_at(4);
-    let y: Vec<char> = first_4.chars().collect();
-    let mut first;
-    let mut second = y[1];
-    let mut third = y[2];
-    let mut fourth = y[3];
+fn is_char_array_unique(ch_arr: Vec<char>) -> bool {
+    let mut tmp = ch_arr.clone();
+    tmp.sort();
+    tmp.dedup();
+    ch_arr.len() == tmp.len()
+}
 
-    let mut count = 4;
+fn find_packet_marker(data: &str, size: usize) -> usize {
+    let (first_n, rest) = data.split_at(size);
+    let mut buf: VecDeque<char> = VecDeque::new();
+    for i in first_n.chars() {
+        buf.push_back(i);
+    }
+
+    let mut count = size;
     for c in rest.chars() {
         count += 1;
-        (fourth, third, second, first) = (c, fourth, third, second);
-        if first != second
-            && first != third
-            && first != fourth
-            && second != third
-            && second != fourth
-            && third != fourth
-        {
+        buf.push_back(c);
+        buf.pop_front();
+        if is_char_array_unique(buf.clone().into()) {
             return count;
         }
     }
@@ -30,13 +35,27 @@ fn find_packet_marker(data: &str) -> i32 {
 }
 
 #[test]
-fn test_packet_marker() {
-    let i = find_packet_marker("bvwbjplbgvbhsrlpgdmjqwftvncz");
+fn test_packet_marker_4() {
+    let i = find_packet_marker("bvwbjplbgvbhsrlpgdmjqwftvncz", 4);
     assert_eq!(i, 5);
-    let i = find_packet_marker("nppdvjthqldpwncqszvftbrmjlhg");
+    let i = find_packet_marker("nppdvjthqldpwncqszvftbrmjlhg", 4);
     assert_eq!(i, 6);
-    let i = find_packet_marker("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg");
+    let i = find_packet_marker("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 4);
     assert_eq!(i, 10);
-    let i = find_packet_marker("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw");
+    let i = find_packet_marker("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 4);
     assert_eq!(i, 11);
+}
+
+#[test]
+fn test_packet_marker_14() {
+    let i = find_packet_marker("mjqjpqmgbljsphdztnvjfqwrcgsmlb", 14);
+    assert_eq!(i, 19);
+    let i = find_packet_marker("bvwbjplbgvbhsrlpgdmjqwftvncz", 14);
+    assert_eq!(i, 23);
+    let i = find_packet_marker("nppdvjthqldpwncqszvftbrmjlhg", 14);
+    assert_eq!(i, 23);
+    let i = find_packet_marker("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 14);
+    assert_eq!(i, 29);
+    let i = find_packet_marker("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 14);
+    assert_eq!(i, 26);
 }
