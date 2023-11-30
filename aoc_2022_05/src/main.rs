@@ -5,19 +5,7 @@ use nom::character::complete::digit1;
 
 use nom::IResult;
 
-struct Stack {
-    contents: Vec<char>,
-}
-
-impl Stack {
-    fn move_crates(&mut self, count: i32, mut dest: Stack) {
-        for i in 0..count {
-            dest.contents.push(self.contents.pop().unwrap());
-        }
-    }
-}
-
-fn parse_move_params(input: &str) -> IResult<&str, (i32, i32, i32)> {
+fn parse_move_params(input: &str) -> IResult<&str, (usize, usize, usize)> {
     let (input, _) = tag("move ")(input)?;
     let (input, move_count) = digit1(input)?;
     let (input, _) = tag(" from ")(input)?;
@@ -49,15 +37,6 @@ fn parse_move_params(input: &str) -> IResult<&str, (i32, i32, i32)> {
 
 fn main() {
     let lines = include_str!("input.txt").lines();
-    // let mut stack_1 = vec!['Z', 'J', 'G'];
-    // let mut stack_2 = vec!['Q', 'L', 'R', 'P', 'W', 'F', 'V', 'C'];
-    // let mut stack_3 = vec!['F', 'P', 'M', 'C', 'L', 'G', 'R'];
-    // let mut stack_4 = vec!['L', 'F', 'B', 'W', 'P', 'H', 'M'];
-    // let mut stack_5 = vec!['G', 'C', 'F', 'S', 'V', 'Q'];
-    // let mut stack_6 = vec!['W', 'H', 'J', 'Z', 'M', 'Q', 'T', 'L'];
-    // let mut stack_7 = vec!['H', 'F', 'S', 'B', 'V'];
-    // let mut stack_8 = vec!['F', 'J', 'Z', 'S'];
-    // let mut stack_9 = vec!['M', 'C', 'D', 'P', 'F', 'H', 'B', 'T'];
     let mut stacks = HashMap::new();
     stacks.insert(1, "ZJG".to_string());
     stacks.insert(2, "QLRPWFVC".to_string());
@@ -68,23 +47,23 @@ fn main() {
     stacks.insert(7, "HFSBV".to_string());
     stacks.insert(8, "FJZS".to_string());
     stacks.insert(9, "MCDPFHBT".to_string());
-    // move 1 from 5 to 6
     for ln in lines.into_iter() {
         match parse_move_params(ln) {
             Ok((_, (move_count, from_id, to_id))) => {
-                println!("{} {} {}", move_count, from_id, to_id);
-                for i in 0..move_count {
-                    let mut s = stacks.get(&from_id).unwrap().clone();
-                    let v = s.pop().unwrap();
-                    let mut dst = stacks.get(&to_id).unwrap().clone();
-                    dst.push(v);
-                    stacks.insert(from_id, s);
-                    stacks.insert(to_id, dst);
-                }
+                let s = stacks.get(&from_id).unwrap().clone();
+                let mut v = String::new();
+                let frm_idx: usize = s.len() - move_count;
+                let new_str = (s[0..frm_idx]).to_string();
+                (s[frm_idx..s.len()]).clone_into(&mut v);
+                let mut dst = stacks.get(&to_id).unwrap().clone();
+                dst.push_str(&v);
+                stacks.insert(from_id, new_str);
+                stacks.insert(to_id, dst);
             }
             Err(_) => println!("Error parsing"),
         }
     }
     // WSFTMRHPP
+    // GSLCMFBRP
     print!("{:?}", stacks);
 }
