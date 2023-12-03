@@ -18,7 +18,7 @@ fn part_1(lines: Lines) -> u32 {
         let mut second: Option<char> = None;
         for char in ln.chars() {
             if char.is_numeric() {
-                if let Some(_) = first {
+                if first.is_some() {
                     second = Some(char);
                 } else {
                     first = Some(char);
@@ -41,7 +41,7 @@ fn get_nums_with_regex(ln: &str) -> (&str, &str) {
     println!("{}", ln);
     let re = Regex::new(r"(?=(one|two|three|four|five|six|seven|eight|nine|\\d))").unwrap();
     println!("{:?}", re);
-    let mut results = vec![];
+    let results = vec![];
     for result in re.find_iter(ln) {
         match result {
             Ok(m) => {
@@ -131,7 +131,7 @@ fn part_2(lines: Lines) -> u32 {
         let mut second: Option<char> = None;
         for char in cleaned_ln.chars() {
             if char.is_numeric() {
-                if let Some(_) = first {
+                if first.is_some() {
                     second = Some(char);
                 } else {
                     first = Some(char);
