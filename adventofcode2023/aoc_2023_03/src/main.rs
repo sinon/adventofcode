@@ -19,7 +19,7 @@ struct NumberRange {
 }
 
 impl NumberRange {
-    fn has_nearby_symbol(&self, grid: &Vec<Vec<char>>) -> bool {
+    fn has_nearby_symbol(&self, grid: &[Vec<char>]) -> bool {
         // 467..114..
         // ...*......
         // ..35..633.
@@ -43,13 +43,13 @@ impl NumberRange {
         };
 
         // Above Horizontal
-        for col_idx in (top_l.column..(top_r.column + 1).clamp(0, col_boundary)) {
+        for col_idx in top_l.column..(top_r.column + 1).clamp(0, col_boundary) {
             if is_symbol(grid[top_r.row][col_idx]) {
                 return true;
             }
         }
         // Below Horizontal
-        for col_idx in (bottom_l.column..(bottom_r.column + 1).clamp(0, col_boundary)) {
+        for col_idx in bottom_l.column..(bottom_r.column + 1).clamp(0, col_boundary) {
             if is_symbol(grid[bottom_l.row][col_idx]) {
                 return true;
             }
@@ -93,10 +93,10 @@ fn test_has_nearby_symbol() {
     assert_eq!(num_range.has_nearby_symbol(&grid), false);
 }
 
-fn get_number_ranges_from_grid(grid: &Vec<Vec<char>>) -> Vec<NumberRange> {
+fn get_number_ranges_from_grid(grid: &[Vec<char>]) -> Vec<NumberRange> {
     let mut number_ranges: Vec<NumberRange> = Vec::new();
     let mut in_num = false;
-    let (mut num_start, mut num_end) = (0, 0);
+    let mut num_start = 0;
     let mut num = "".to_string();
     // Iterate over the rows
     for (row_idx, row) in grid.iter().enumerate() {
@@ -107,47 +107,45 @@ fn get_number_ranges_from_grid(grid: &Vec<Vec<char>>) -> Vec<NumberRange> {
                 if !in_num {
                     in_num = true;
                     num_start = col_idx;
-                    num.push(col.clone());
+                    num.push(*col);
                 } else {
-                    num.push(col.clone());
+                    num.push(*col);
                 }
 
                 if col_idx == row.len() - 1 {
                     in_num = false;
-                    num_end = row.len() - 1;
+                    let num_end = row.len() - 1;
                     assert!((num_end - num_start) == num.len() - 1);
                     number_ranges.push(NumberRange {
                         start: Point {
-                            row: row_idx.into(),
+                            row: row_idx,
                             column: num_start,
                         },
                         end: Point {
-                            row: row_idx.into(),
+                            row: row_idx,
                             column: num_end,
                         },
                         value: num.parse().unwrap(),
                     });
                     num = "".to_string();
                 }
-            } else {
-                if in_num {
-                    in_num = false;
-                    num_end = col_idx - 1;
+            } else if in_num {
+                in_num = false;
+                let num_end = col_idx - 1;
 
-                    assert!((num_end - num_start) == num.len() - 1);
-                    number_ranges.push(NumberRange {
-                        start: Point {
-                            row: row_idx.into(),
-                            column: num_start,
-                        },
-                        end: Point {
-                            row: row_idx.into(),
-                            column: num_end,
-                        },
-                        value: num.parse().unwrap(),
-                    });
-                    num = "".to_string();
-                }
+                assert!((num_end - num_start) == num.len() - 1);
+                number_ranges.push(NumberRange {
+                    start: Point {
+                        row: row_idx,
+                        column: num_start,
+                    },
+                    end: Point {
+                        row: row_idx,
+                        column: num_end,
+                    },
+                    value: num.parse().unwrap(),
+                });
+                num = "".to_string();
             }
         }
     }
@@ -157,7 +155,7 @@ fn get_number_ranges_from_grid(grid: &Vec<Vec<char>>) -> Vec<NumberRange> {
 fn part_1(lines: Lines) -> usize {
     // Load lines in to a 2D Array i.e x,y row/column
     let grid = grid_from_lines(lines);
-    let mut number_ranges = get_number_ranges_from_grid(&grid);
+    let number_ranges = get_number_ranges_from_grid(&grid);
 
     // Search the space around the range for a symbol
     let mut total = 0;

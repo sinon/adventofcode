@@ -23,13 +23,13 @@ impl ColourCombination {
         for (color, value) in color_vec.iter() {
             match color {
                 Color::Red => {
-                    red = value.clone();
+                    red = *value;
                 }
                 Color::Blue => {
-                    blue = value.clone();
+                    blue = *value;
                 }
                 Color::Green => {
-                    green = value.clone();
+                    green = *value;
                 }
             }
         }
