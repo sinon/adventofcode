@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::BTreeMap};
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, PartialOrd, Debug)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, PartialOrd, Ord, Debug)]
 enum Rank {
     Ace,
     King,
@@ -17,39 +17,6 @@ enum Rank {
     Two,
 }
 
-impl Rank {
-    fn ordinal(&self) -> usize {
-        match *self {
-            Rank::Two => 0,
-            Rank::Three => 1,
-            Rank::Four => 2,
-            Rank::Five => 3,
-            Rank::Six => 4,
-            Rank::Seven => 5,
-            Rank::Eight => 6,
-            Rank::Nine => 7,
-            Rank::Ten => 8,
-            Rank::Jack => 9,
-            Rank::Queen => 10,
-            Rank::King => 11,
-            Rank::Ace => 12,
-        }
-    }
-}
-
-impl Ord for Rank {
-    fn cmp(&self, other: &Rank) -> Ordering {
-        let ord1 = self.ordinal();
-        let ord2 = other.ordinal();
-        if ord1 < ord2 {
-            return Ordering::Less;
-        } else if ord1 > ord2 {
-            return Ordering::Greater;
-        }
-        Ordering::Equal
-    }
-}
-
 #[derive(Copy, Clone, Hash, Eq, PartialEq, PartialOrd, Ord, Debug)]
 enum HandType {
     FiveOfAKind,
@@ -63,7 +30,7 @@ enum HandType {
 
 impl From<char> for Rank {
     fn from(item: char) -> Rank {
-        let rank = match item {
+        match item {
             '2' => Rank::Two,
             '3' => Rank::Three,
             '4' => Rank::Four,
@@ -78,8 +45,7 @@ impl From<char> for Rank {
             'K' => Rank::King,
             'A' | '1' => Rank::Ace,
             _ => unreachable!("Invalid rank"),
-        };
-        rank
+        }
     }
 }
 
@@ -97,18 +63,7 @@ impl PartialEq for CamelHand {
 
 impl PartialOrd for CamelHand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let ht1 = self.classify();
-        let ht2 = other.classify();
-        if ht1 != ht2 {
-            return ht1.partial_cmp(&ht2);
-        } else {
-            for zip in self.cards.iter().zip(other.cards.iter()) {
-                if zip.0 != zip.1 {
-                    return zip.0.partial_cmp(zip.1);
-                }
-            }
-        }
-        self.classify().partial_cmp(&other.classify())
+        Some(self.cmp(other))
     }
 }
 
@@ -125,13 +80,13 @@ impl Ord for CamelHand {
                 }
             }
         }
-        self.classify().cmp(&other.classify())
+        unreachable!("");
     }
 }
 
 impl CamelHand {
     fn new(line: &str) -> CamelHand {
-        let mut split = line.split(" ");
+        let mut split = line.split(' ');
         let cards = split
             .next()
             .unwrap()
