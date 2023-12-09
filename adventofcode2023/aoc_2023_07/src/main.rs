@@ -1,31 +1,32 @@
 use std::{cmp::Ordering, collections::BTreeMap};
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, PartialOrd, Ord, Debug)]
+#[repr(u8)]
 enum Rank {
-    Ace,
-    King,
-    Queen,
-    Jack,
-    Ten,
-    Nine,
-    Eight,
-    Seven,
-    Six,
-    Five,
-    Four,
-    Three,
-    Two,
+    Two = 2,
+    Three = 3,
+    Four = 4,
+    Five = 5,
+    Six = 6,
+    Seven = 7,
+    Eight = 8,
+    Nine = 9,
+    Ten = 10,
+    Jack = 11,
+    Queen = 12,
+    King = 13,
+    Ace = 14,
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, PartialOrd, Ord, Debug)]
 enum HandType {
-    FiveOfAKind,
-    FourOfAKind,
-    ThreeOfAKind,
-    TwoPair,
-    FullHouse,
-    Pair,
     HighCard,
+    Pair,
+    TwoPair,
+    ThreeOfAKind,
+    FullHouse,
+    FourOfAKind,
+    FiveOfAKind,
 }
 
 impl From<char> for Rank {
@@ -114,14 +115,13 @@ impl CamelHand {
             });
         let mut x: Vec<&i64> = counter.values().collect();
         x.sort();
-        x.reverse();
         match x.as_slice() {
             [1, 1, 1, 1, 1] => HandType::HighCard,
-            [2, 1, 1, 1] => HandType::Pair,
-            [2, 2, 1] => HandType::TwoPair,
-            [3, 1, 1] => HandType::ThreeOfAKind,
-            [3, 2] => HandType::FullHouse,
-            [4, 1] => HandType::FourOfAKind,
+            [1, 1, 1, 2] => HandType::Pair,
+            [_, 2, 2] => HandType::TwoPair,
+            [_, _, 3] => HandType::ThreeOfAKind,
+            [_, 3] => HandType::FullHouse,
+            [_, 4] => HandType::FourOfAKind,
             [5] => HandType::FiveOfAKind,
             _ => {
                 unreachable!("Invalid hand: {:?}", x);
@@ -139,7 +139,6 @@ fn main() {
 fn p1(input: &str) -> i64 {
     let mut hands = input.lines().map(CamelHand::new).collect::<Vec<_>>();
     hands.sort();
-    hands.reverse();
     let mut total = 0;
     for (i, h) in hands.iter().enumerate() {
         println!(
