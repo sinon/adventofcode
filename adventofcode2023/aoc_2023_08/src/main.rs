@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use graph::prelude::{DirectedCsrGraph, DirectedNeighbors, GraphBuilder};
 use nom::{bytes::complete::tag, character::complete::alpha1, sequence::separated_pair, IResult};
 
 fn main() {
@@ -23,69 +22,34 @@ fn p1(input: &str) -> i32 {
     let mut lines = input.lines();
     let instructions = lines.next().unwrap();
     let _ = lines.next();
-    let mut nodes: Vec<String> = Vec::new();
-    let mut edges: Vec<(usize, usize)> = Vec::new();
+    let mut map: HashMap<String, (String, String)> = HashMap::new();
     for ln in lines {
         let cleaned_ln = ln.replace("(", "").replace(")", "");
 
         let (_, ((p_node, ed_1), (_, ed_2))) = parse_node_edges(&cleaned_ln).unwrap();
-        if !nodes.iter().any(|i| i.clone() == p_node.to_string()) {
-            nodes.push(p_node.to_string());
-        }
-        if !nodes.iter().any(|i| i.clone() == ed_1.to_string()) {
-            nodes.push(ed_1.to_string());
-        }
-        if !nodes.iter().any(|i| i.clone() == ed_2.to_string()) {
-            nodes.push(ed_2.to_string());
-        }
-        println!("PNode:{} Edge1: {} Edge2: {}", p_node, ed_1, ed_2);
-        // println!("Nodes: {:?}", nodes);
-        let p_id = nodes
-            .iter()
-            .position(|r| r.clone() == p_node.to_string())
-            .unwrap();
-        let ed1_id = nodes
-            .iter()
-            .position(|r| r.clone() == ed_1.to_string())
-            .unwrap();
-        let ed2_id = nodes
-            .iter()
-            .position(|r| r.clone() == ed_2.to_string())
-            .unwrap();
-        edges.push((p_id, ed1_id));
-        edges.push((p_id, ed2_id));
+
+        map.insert(p_node.to_owned(), (ed_1.to_owned(), ed_2.to_owned()));
     }
-    let mut node_name_lookup: HashMap<usize, String> = HashMap::new();
-    let mut node_id_lookup: HashMap<String, usize> = HashMap::new();
-    for (idx, name) in nodes.into_iter().enumerate() {
-        node_id_lookup.insert(name.clone(), idx);
-        node_name_lookup.insert(idx, name);
-    }
-    let graph: DirectedCsrGraph<usize> = GraphBuilder::new().edges(edges).build();
-    let mut current_node_id = 0;
-    let terminus_node_id = node_id_lookup.get("ZZZ").unwrap().clone();
+
     let mut count = 0;
-    for ch in instructions.chars() {
-        let mut n_edges = graph.out_neighbors(current_node_id);
-        let l = n_edges.next().unwrap();
-        let r = n_edges.next().unwrap();
-        println!(
-            "At Node: {} Children: Left::{} Right::{}",
-            node_name_lookup.get(&current_node_id).unwrap(),
-            node_name_lookup.get(l).unwrap(),
-            node_name_lookup.get(r).unwrap()
-        );
-        count += 1;
-        match ch {
-            'L' => current_node_id = *l,
-            'R' => current_node_id = *r,
-            _ => unreachable!("Unknown direction {}", ch),
-        }
-        if current_node_id == terminus_node_id {
-            break;
+    let mut current_node = "AAA".to_owned();
+    let end_node = "ZZZ".to_owned();
+    loop {
+        for c in instructions.chars() {
+            if current_node == end_node {
+                return count;
+            }
+            let node = map.get(&current_node).unwrap();
+            match c {
+                'L' => current_node = node.0.clone(),
+                'R' => current_node = node.1.clone(),
+                _ => {
+                    unreachable!()
+                }
+            }
+            count += 1;
         }
     }
-    count
 }
 #[test]
 fn test_p1_1() {
