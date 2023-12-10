@@ -8,14 +8,14 @@ fn main() {
     dbg!(p1_result);
 }
 
-fn parse_node_edges(input: &str) -> IResult<&str, ((&str, &str), (&str, &str))> {
+fn parse_node_edges(input: &str) -> IResult<&str, (&str, &str, &str)> {
     // AAA = (BBB, CCC)
     let (input, (parent_node, (edge_1, edge_2))) = separated_pair(
         alpha1,
         tag(" = "),
         separated_pair(alpha1, tag(", "), alpha1),
     )(input)?;
-    Ok((input, ((parent_node, edge_1), (parent_node, edge_2))))
+    Ok((input, (parent_node, edge_1, edge_2)))
 }
 
 fn p1(input: &str) -> i32 {
@@ -24,9 +24,9 @@ fn p1(input: &str) -> i32 {
     let _ = lines.next();
     let mut map: HashMap<String, (String, String)> = HashMap::new();
     for ln in lines {
-        let cleaned_ln = ln.replace("(", "").replace(")", "");
+        let cleaned_ln = ln.replace(['(', ')'], "");
 
-        let (_, ((p_node, ed_1), (_, ed_2))) = parse_node_edges(&cleaned_ln).unwrap();
+        let (_, (p_node, ed_1, ed_2)) = parse_node_edges(&cleaned_ln).unwrap();
 
         map.insert(p_node.to_owned(), (ed_1.to_owned(), ed_2.to_owned()));
     }
