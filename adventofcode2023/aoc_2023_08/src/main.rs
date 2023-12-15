@@ -6,10 +6,11 @@ fn main() {
     let input = include_str!("./input.txt");
     let p1_result = p1(input);
     dbg!(p1_result);
+    let p2_result = p2(input);
+    dbg!(p2_result);
 }
 
 fn parse_node_edges(input: &str) -> IResult<&str, (&str, &str, &str)> {
-    // AAA = (BBB, CCC)
     let (input, (parent_node, (edge_1, edge_2))) = separated_pair(
         alpha1,
         tag(" = "),
@@ -18,10 +19,10 @@ fn parse_node_edges(input: &str) -> IResult<&str, (&str, &str, &str)> {
     Ok((input, (parent_node, edge_1, edge_2)))
 }
 
-fn p1(input: &str) -> i32 {
+fn parse_input(input: &str) -> (&str, HashMap<String, (String, String)>) {
     let mut lines = input.lines();
     let instructions = lines.next().unwrap();
-    let _ = lines.next();
+    lines.next();
     let mut map: HashMap<String, (String, String)> = HashMap::new();
     for ln in lines {
         let cleaned_ln = ln.replace(['(', ')'], "");
@@ -30,6 +31,11 @@ fn p1(input: &str) -> i32 {
 
         map.insert(p_node.to_owned(), (ed_1.to_owned(), ed_2.to_owned()));
     }
+    (instructions, map)
+}
+
+fn p1(input: &str) -> i32 {
+    let (instructions, map) = parse_input(input);
 
     let mut count = 0;
     let mut current_node = "AAA".to_owned();
@@ -51,6 +57,37 @@ fn p1(input: &str) -> i32 {
         }
     }
 }
+
+fn is_end_state(current_nodes: &Vec<&String>) -> bool {
+    current_nodes.iter().all(|&x| x.ends_with('Z'))
+}
+
+fn p2(input: &str) -> i32 {
+    let (instructions, map) = parse_input(input);
+
+    let mut count = 0;
+    let mut current_nodes: Vec<&String> =
+        map.keys().filter(|x| x.ends_with('A')).to_owned().collect();
+    loop {
+        for c in instructions.chars() {
+            if is_end_state(&current_nodes) {
+                return count;
+            }
+            for (idx, n) in current_nodes.iter().enumerate() {
+                let (left, right) = map.get(*n).unwrap();
+                match c {
+                    'L' => current_nodes[idx] = left,
+                    'R' => current_nodes[idx] = right,
+                    _ => {
+                        unreachable!()
+                    }
+                }
+            }
+        }
+    }
+    0
+}
+
 #[test]
 fn test_p1_1() {
     let input = "RL
@@ -74,4 +111,19 @@ BBB = (AAA, ZZZ)
 ZZZ = (ZZZ, ZZZ)";
     println!("{}", input);
     assert_eq!(p1(input), 6);
+}
+
+#[test]
+fn test_p2() {
+    let input = "LR
+
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)";
+    assert_eq!(p2(input), 6);
 }
