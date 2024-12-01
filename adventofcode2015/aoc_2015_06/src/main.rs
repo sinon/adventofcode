@@ -131,9 +131,3 @@ fn main() {
 
     part_2(input);
 }
-
-#[test]
-fn test_p1() {
-    let x = parse_command("turn off 660,55 through 986,197").unwrap();
-    assert!(false);
-}
