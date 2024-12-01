@@ -1,8 +1,8 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag},
+    bytes::complete::tag,
     character::complete::{char, digit1},
-    sequence::{separated_pair},
+    sequence::separated_pair,
     IResult,
 };
 
@@ -53,22 +53,22 @@ fn main() {
         let (_, cmd) = parse_command(ln).unwrap();
         match cmd {
             Command::TurnOn(Range(x1, y1), Range(x2, y2)) => {
-                for x in x1..x2 {
-                    for y in y1..y2 {
+                for x in x1..x2 + 1 {
+                    for y in y1..y2 + 1 {
                         grid[x][y] = true;
                     }
                 }
             }
             Command::TurnOff(Range(x1, y1), Range(x2, y2)) => {
-                for x in x1..x2 {
-                    for y in y1..y2 {
+                for x in x1..x2 + 1 {
+                    for y in y1..y2 + 1 {
                         grid[x][y] = false;
                     }
                 }
             }
             Command::Toggle(Range(x1, y1), Range(x2, y2)) => {
-                for x in x1..x2 {
-                    for y in y1..y2 {
+                for x in x1..x2 + 1 {
+                    for y in y1..y2 + 1 {
                         grid[x][y] = !grid[x][y];
                     }
                 }
@@ -76,8 +76,8 @@ fn main() {
         }
     }
     let mut lit_count = 0;
-    for x in 0..999 {
-        for y in 0..999 {
+    for x in 0..1000 {
+        for y in 0..1000 {
             if grid[x][y] {
                 lit_count += 1;
             }
