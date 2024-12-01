@@ -46,8 +46,7 @@ fn parse_command(input: &str) -> IResult<&str, Command> {
     Ok((input, cmd))
 }
 
-fn main() {
-    let input = include_str!("./input.txt");
+fn part_1(input: &str) {
     let mut grid = [[false; 1000]; 1000];
     for ln in input.lines() {
         let (_, cmd) = parse_command(ln).unwrap();
@@ -84,6 +83,53 @@ fn main() {
         }
     }
     dbg!(lit_count);
+}
+
+fn part_2(input: &str) {
+    let mut grid = [[0; 1000]; 1000];
+    for ln in input.lines() {
+        let (_, cmd) = parse_command(ln).unwrap();
+        match cmd {
+            Command::TurnOn(Range(x1, y1), Range(x2, y2)) => {
+                for x in x1..x2 + 1 {
+                    for y in y1..y2 + 1 {
+                        grid[x][y] += 1;
+                    }
+                }
+            }
+            Command::TurnOff(Range(x1, y1), Range(x2, y2)) => {
+                for x in x1..x2 + 1 {
+                    for y in y1..y2 + 1 {
+                        grid[x][y] -= 1;
+                        if grid[x][y] < 0 {
+                            grid[x][y] = 0;
+                        }
+                    }
+                }
+            }
+            Command::Toggle(Range(x1, y1), Range(x2, y2)) => {
+                for x in x1..x2 + 1 {
+                    for y in y1..y2 + 1 {
+                        grid[x][y] += 2;
+                    }
+                }
+            }
+        }
+    }
+    let mut lit_count_2 = 0;
+    for x in 0..1000 {
+        for y in 0..1000 {
+            lit_count_2 += grid[x][y];
+        }
+    }
+    dbg!(lit_count_2);
+}
+
+fn main() {
+    let input = include_str!("./input.txt");
+    part_1(input);
+
+    part_2(input);
 }
 
 #[test]
