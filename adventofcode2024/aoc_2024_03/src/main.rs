@@ -1,16 +1,4 @@
-use std::{
-    collections::{BTreeSet, HashMap},
-    iter::zip,
-    str::Lines,
-};
 
-use nom::{
-    bytes::complete::{tag, take_until},
-    character::complete::{anychar, digit1},
-    multi::{many0, many_till},
-    sequence::{delimited, tuple},
-    IResult,
-};
 use regex::Regex;
 
 fn main() {
@@ -37,7 +25,7 @@ fn part_2(input: &str) -> i32 {
     let do_re = Regex::new(r"(do\(\))").unwrap();
     let dont_re = Regex::new(r"(don't\(\))").unwrap();
 
-    let input = do_re.replace_all(&input, "\ndo()");
+    let input = do_re.replace_all(input, "\ndo()");
     let input = dont_re.replace_all(&input, "\ndon't()");
 
     let mut is_enabled = true;
