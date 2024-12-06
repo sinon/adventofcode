@@ -1,47 +1,13 @@
-#[derive(Debug)]
-struct OrderingRule {
-    pre: i32,
-    post: i32,
-}
-#[derive(Debug)]
-struct PageUpdates {
-    values: Vec<i32>,
-}
+use std::collections::HashMap;
 
-impl PageUpdates {
-    fn middle(&self) -> i32 {
-        self.values[((self.values.len() - 1) as f64 / 2.0).round() as usize]
-    }
-    fn abides(&self, rule: &OrderingRule) -> bool {
-        // Rule only applies if both numbers are present
-        if self.values.contains(&rule.pre) && self.values.contains(&rule.post) {
-            let mut pre_found = false;
-            let mut post_found = false;
-            for v in &self.values {
-                if *v == rule.post && !pre_found {
-                    return false;
-                }
-                if *v == rule.pre && post_found {
-                    return false;
-                }
-                if *v == rule.post && pre_found {
-                    post_found = true;
-                    continue;
-                }
-                if *v == rule.pre && !post_found {
-                    pre_found = true;
-                    continue;
-                }
-            }
-        }
-        true
-    }
-}
+#[derive(PartialEq, Eq, Hash)]
+struct PageNum(i32);
+struct Afters(Vec<PageNum>);
 
 #[tracing::instrument]
 pub fn process(_input: &str) -> miette::Result<i32> {
-    let mut rules: Vec<OrderingRule> = Vec::new();
-    let mut updates: Vec<PageUpdates> = Vec::new();
+    let mut rules: HashMap<PageNum, Afters> = HashMap::new();
+    let mut updates: Vec<Vec<PageNum>> = Vec::new();
     for ln in _input.lines() {
         let layout: Vec<&str> = ln.split("|").collect();
         if layout.len() == 2 {
@@ -49,32 +15,32 @@ pub fn process(_input: &str) -> miette::Result<i32> {
                 layout[0].parse::<i32>().unwrap(),
                 layout[1].parse::<i32>().unwrap(),
             );
-            rules.push(OrderingRule {
-                pre: start,
-                post: end,
-            });
+            rules
+                .entry(PageNum(start))
+                .and_modify(|afters| afters.0.push(PageNum(end)))
+                .or_insert(Afters(vec![PageNum(end)]));
             continue;
         }
         if ln.len() > 1 {
-            updates.push(PageUpdates {
-                values: ln.split(",").map(|x| x.parse::<i32>().unwrap()).collect(),
-            });
+            updates.push(
+                ln.split(",")
+                    .map(|x| PageNum(x.parse::<i32>().unwrap()))
+                    .collect(),
+            );
         }
     }
-    let mut sum = 0;
-    for update in updates {
-        let mut failed = false;
-        for r in &rules {
-            if !update.abides(r) {
-                failed = true;
-                break;
-            }
-        }
-        if !failed {
-            sum += update.middle();
-        }
-    }
-    Ok(sum)
+
+    let result: i32 = updates
+        .iter()
+        .filter(|update| {
+            update.is_sorted_by(|a, b| rules.get(a).is_some_and(|pages| pages.0.contains(b)))
+        })
+        .map(|update| {
+            let middle = update.len() / 2;
+            update[middle].0
+        })
+        .sum();
+    Ok(result)
 }
 
 #[cfg(test)]
