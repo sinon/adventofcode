@@ -41,6 +41,12 @@ fn generate_combinations<T: Clone>(input: &[T], slots: usize) -> Vec<Vec<T>> {
 
 impl Formula {
     fn can_balance(&self) -> i64 {
+        let goal: i64;
+        if let Some(r) = self.result {
+            goal = r;
+        } else {
+            return 0;
+        }
         if self.operands.is_empty() {
             return 0;
         }
@@ -49,18 +55,18 @@ impl Formula {
             self.operands.len() - 1,
         );
         for combination in combinations {
-            let mut a = self.operands[0];
-            let mut result = 0;
-            // [81, 40, 27]
-            for (idx, op) in combination.iter().enumerate() {
-                let b = self.operands[idx + 1];
-                result = apply_operator(op, a, b);
-                a = result;
-            }
-            if let Some(r) = self.result {
-                if r == result {
-                    return result;
-                }
+            let result = combination
+                .iter()
+                .enumerate()
+                .fold(self.operands[0], |acc, (idx, op)| {
+                    let r = apply_operator(op, acc, self.operands[idx + 1]);
+                    if r > goal {
+                        return 0;
+                    }
+                    r
+                });
+            if goal == result {
+                return result;
             }
         }
         0
