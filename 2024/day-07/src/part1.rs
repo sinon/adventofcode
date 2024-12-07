@@ -41,11 +41,11 @@ fn generate_combinations<T: Clone>(input: &[T], slots: usize) -> Vec<Vec<T>> {
 
 impl Formula {
     fn can_balance(&self) -> i64 {
-        if self.operands.len() == 0 {
+        if self.operands.is_empty() {
             return 0;
         }
         let combinations = generate_combinations(
-            &vec![Operator::Multiply, Operator::Add],
+            &[Operator::Multiply, Operator::Add],
             self.operands.len() - 1,
         );
         for combination in combinations {
@@ -68,9 +68,9 @@ impl Formula {
 }
 
 fn apply_operator(op: &Operator, a: i64, b: i64) -> i64 {
-    match op {
-        &Operator::Add => a + b,
-        &Operator::Multiply => a * b,
+    match *op {
+        Operator::Add => a + b,
+        Operator::Multiply => a * b,
     }
 }
 
