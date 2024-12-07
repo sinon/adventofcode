@@ -1,6 +1,7 @@
-use anyhow::{bail, Result};
-use nom::combinator::rest;
+use core::fmt;
+use miette::{bail, Result};
 use std::collections::HashSet;
+use tracing::trace_span;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 enum Direction {
@@ -8,6 +9,12 @@ enum Direction {
     East,
     South,
     West,
+}
+
+impl fmt::Display for Direction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -22,14 +29,14 @@ impl Location {
     }
 }
 
-type Grid = [[char; 130]; 130];
+type Grid = [[char; 10]; 10];
 
 struct Guard<'a> {
     current_location: Location,
     facing: Direction,
     visited: HashSet<Location>,
-    grid: &'a Grid,
     off_grid: bool,
+    grid: &'a Grid,
 }
 
 impl<'a> Guard<'a> {
@@ -95,10 +102,6 @@ impl<'a> Guard<'a> {
         if self.off_grid {
             bail!("Off grid no next space")
         }
-        println!(
-            "off grid: {} new_location: {:?}",
-            self.off_grid, next_location
-        );
         Ok(self.grid[next_location.row as usize][next_location.column as usize])
     }
 
@@ -115,14 +118,15 @@ impl<'a> Guard<'a> {
             if !self.is_wall_ahead() || self.off_grid {
                 break;
             }
-            println!("Wall ahead");
+            trace_span!("Wall ahead");
             self.turn();
-            println!("Turning");
-            println!("Now facing: {:?}", self.facing);
+            trace_span!("Turning");
+
+            trace_span!("Now facing", direction = format!("{}", self.facing));
             self.move_forward();
         }
         let next = self.next_location();
-        println!("Next location: {:?}", next);
+        trace_span!("Next location", next = format!("{:?}", next));
         self.visited.insert(next.clone());
         self.current_location = next;
     }
@@ -140,7 +144,7 @@ impl<'a> Guard<'a> {
 
 #[tracing::instrument]
 pub fn process(_input: &str) -> miette::Result<i32> {
-    let mut grid: Grid = [['.'; 130]; 130];
+    let mut grid: Grid = [['.'; 10]; 10];
     let mut x = 0;
     let mut y = 0;
     let mut start = Location::new(0, 0);
@@ -152,17 +156,11 @@ pub fn process(_input: &str) -> miette::Result<i32> {
             } else {
                 grid[x as usize][y as usize] = c;
             }
-            // println!("{} {}", x, y);
             y += 1;
         }
         x += 1;
         y = 0;
     }
-    // for g in grid {
-    //     println!("{:?}", g);
-    // }
-    // println!("{:?}", start);
-
     let mut guard = Guard::new(start, Direction::North, &grid);
 
     loop {
