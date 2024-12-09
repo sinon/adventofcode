@@ -1,8 +1,7 @@
 use core::fmt;
 use miette::{bail, Result};
-use rayon::prelude::*;
 use std::{
-    collections::{hash_set, HashMap, HashSet},
+    collections::{HashMap, HashSet},
     hash::Hash,
 };
 
@@ -43,7 +42,7 @@ struct Guard<'a> {
     bumps: HashMap<Location, i64>,
 }
 
-impl<'a> Guard<'a> {
+impl Guard<'_> {
     fn new(start: Location, facing: Direction, grid: &Grid) -> Guard {
         let mut visited: HashSet<Location> = HashSet::new();
         visited.insert(start.clone());
@@ -126,12 +125,12 @@ impl<'a> Guard<'a> {
     fn is_wall_ahead(&mut self) -> bool {
         let next_space = self.next_space();
         match next_space {
-            Ok(c) => return !(c == '.'),
+            Ok(c) => c != '.',
             Err(_) => false,
         }
     }
 
-    fn move_forward(&mut self) -> () {
+    fn move_forward(&mut self) {
         loop {
             if !self.is_wall_ahead() || self.off_grid {
                 // self.visited.pop();
@@ -173,20 +172,19 @@ impl<'a> Guard<'a> {
 #[tracing::instrument]
 pub fn process(_input: &str) -> miette::Result<isize> {
     let mut grid: Grid = [['.'; 130]; 130];
-    let mut x = 0;
     let mut y = 0;
     let mut start = Location::new(0, 0);
-    for ln in _input.lines() {
+    for (x, ln) in _input.lines().enumerate() {
         for c in ln.chars() {
             if c == '^' {
-                start = Location::new(x, y);
-                grid[x as usize][y as usize] = '.';
+                start = Location::new(x as isize, y);
+                grid[x][y as usize] = '.';
             } else {
-                grid[x as usize][y as usize] = c;
+                grid[x][y as usize] = c;
             }
             y += 1;
         }
-        x += 1;
+        // x += 1;
         y = 0;
     }
     let mut guard = Guard::new(start.clone(), Direction::North, &grid);
@@ -203,7 +201,7 @@ pub fn process(_input: &str) -> miette::Result<isize> {
 
     for (g_count, visit) in original_visits.into_iter().enumerate() {
         // println!("Insert Object at: {:?}", visit);
-        let mut g = grid.clone();
+        let mut g = grid;
         g[(visit.row) as usize][(visit.column) as usize] = '#';
         let mut new_g = Guard::new(start.clone(), Direction::North, &g);
         loop {
