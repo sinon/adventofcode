@@ -1,11 +1,10 @@
 use core::fmt;
 use miette::{bail, Result};
+use rayon::prelude::*;
 use std::{
-    borrow::Borrow,
-    collections::{binary_heap, BinaryHeap, HashMap, HashSet},
+    collections::{hash_set, HashMap, HashSet},
     hash::Hash,
 };
-use tracing::trace_span;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 enum Direction {
@@ -23,95 +22,105 @@ impl fmt::Display for Direction {
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 struct Location {
-    row: i32,
-    column: i32,
+    row: isize,
+    column: isize,
 }
 
 impl Location {
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: isize, y: isize) -> Self {
         Location { row: x, column: y }
     }
 }
 
-type Grid = [[char; 10]; 10];
+type Grid = [[char; 130]; 130];
 
 struct Guard<'a> {
     current_location: Location,
     facing: Direction,
     off_grid: bool,
     grid: &'a Grid,
-    visited: Vec<Location>,
-    bumps: HashSet<Location>,
-    loops: i32,
-    loop_locations: Vec<Location>,
+    visited: HashSet<Location>,
+    bumps: HashMap<Location, i64>,
 }
 
 impl<'a> Guard<'a> {
     fn new(start: Location, facing: Direction, grid: &Grid) -> Guard {
-        let mut visited: Vec<Location> = vec![start.clone()];
+        let mut visited: HashSet<Location> = HashSet::new();
+        visited.insert(start.clone());
         Guard {
             current_location: start,
             facing,
             visited,
             grid,
             off_grid: false,
-            bumps: HashSet::new(),
-            loops: 0,
-            loop_locations: Vec::new(),
+            bumps: HashMap::new(),
         }
     }
 
-    fn next_location(&mut self) -> Location {
+    fn next_location(&mut self) -> Option<Location> {
         match self.facing {
             Direction::North => {
                 let next_x = self.current_location.row - 1;
+                // println!("N: {}->{}", self.current_location.row, next_x);
                 if next_x < 0 {
                     self.off_grid = true;
+                    return None;
                 }
-                Location {
+                Some(Location {
                     row: next_x,
                     column: self.current_location.column,
-                }
+                })
             }
             Direction::East => {
                 let next_y = self.current_location.column + 1;
-                if next_y < 0 {
+                // println!("E: {}{}", self.current_location.column, next_y);
+                if next_y >= self.grid.len() as isize {
                     self.off_grid = true;
+                    return None;
                 }
-                Location {
+                Some(Location {
                     row: self.current_location.row,
                     column: next_y,
-                }
+                })
             }
             Direction::South => {
                 let next_x = self.current_location.row + 1;
-                if next_x >= self.grid.len() as i32 {
+                // println!("S: {}->{}", self.current_location.row, next_x);
+                if next_x >= self.grid.len() as isize {
                     self.off_grid = true;
+                    return None;
                 }
-                Location {
+                Some(Location {
                     row: next_x,
                     column: self.current_location.column,
-                }
+                })
             }
             Direction::West => {
                 let next_y = self.current_location.column - 1;
-                if next_y >= self.grid.len() as i32 {
+                // println!("W: {}->{}", self.current_location.column, next_y);
+                if next_y < 0 {
                     self.off_grid = true;
+                    return None;
                 }
-                Location {
+                Some(Location {
                     row: self.current_location.row,
                     column: next_y,
-                }
+                })
             }
         }
     }
 
     fn next_space(&mut self) -> Result<char> {
         let next_location = self.next_location();
-        if self.off_grid {
+        if self.off_grid || next_location.is_none() {
             bail!("Off grid no next space")
         }
-        Ok(self.grid[next_location.row as usize][next_location.column as usize])
+        match next_location {
+            None => {
+                bail!("off grid")
+            }
+            Some(x) => Ok(self.grid[x.row as usize][x.column as usize]),
+        }
     }
 
     fn is_wall_ahead(&mut self) -> bool {
@@ -125,26 +134,29 @@ impl<'a> Guard<'a> {
     fn move_forward(&mut self) -> () {
         loop {
             if !self.is_wall_ahead() || self.off_grid {
+                // self.visited.pop();
                 break;
             }
-            trace_span!("Wall ahead");
+            // println!("Wall ahead");
             // let hit_obstacle = self.next_location();
-            self.bumps.insert(self.current_location.clone());
+            self.bumps
+                .entry(self.current_location.clone())
+                .and_modify(|x| *x += 1)
+                .or_insert(1);
             self.turn();
-            trace_span!("Turning");
+            // println!("Turning");
 
-            trace_span!("Now facing", direction = format!("{}", self.facing));
+            // println!("Now facing: {:?}", self.facing);
         }
         let next = self.next_location();
-        trace_span!("Next location", next = format!("{:?}", next));
-        if self.visited.contains(&next) {
-            // When the guard re-enters a location they have already visited they have completed a loop?
-            self.loops += 1;
-            self.loop_locations.push(next.clone());
-            // self.visited = Vec::new();
+        match next {
+            None => (),
+            Some(n) => {
+                // println!("Next location: {:?}", n);
+                self.visited.insert(n.clone());
+                self.current_location = n;
+            }
         }
-        self.visited.push(next.clone());
-        self.current_location = next;
     }
 
     fn turn(&mut self) {
@@ -159,8 +171,8 @@ impl<'a> Guard<'a> {
 }
 
 #[tracing::instrument]
-pub fn process(_input: &str) -> miette::Result<i32> {
-    let mut grid: Grid = [['.'; 10]; 10];
+pub fn process(_input: &str) -> miette::Result<isize> {
+    let mut grid: Grid = [['.'; 130]; 130];
     let mut x = 0;
     let mut y = 0;
     let mut start = Location::new(0, 0);
@@ -177,16 +189,40 @@ pub fn process(_input: &str) -> miette::Result<i32> {
         x += 1;
         y = 0;
     }
-    let mut guard = Guard::new(start, Direction::North, &grid);
+    let mut guard = Guard::new(start.clone(), Direction::North, &grid);
 
     loop {
         if guard.off_grid {
+            println!("First guard went off grid");
             break;
         }
         guard.move_forward();
     }
-    println!("{:?}", guard.loop_locations);
-    Ok(guard.loops)
+    let original_visits = guard.visited.clone();
+    let mut loops_found = HashSet::new();
+
+    for (g_count, visit) in original_visits.into_iter().enumerate() {
+        // println!("Insert Object at: {:?}", visit);
+        let mut g = grid.clone();
+        g[(visit.row) as usize][(visit.column) as usize] = '#';
+        let mut new_g = Guard::new(start.clone(), Direction::North, &g);
+        loop {
+            if new_g.off_grid {
+                println!("{} guard left the grid", g_count + 1);
+                break;
+            }
+            new_g.move_forward();
+            if new_g.bumps.values().any(|&x| x > 100) {
+                loops_found.insert(visit.clone());
+                println!("Loop found at {:?}", &visit);
+                break;
+            }
+        }
+    }
+    // (6,3) (7,6) (7,7) (8,1) (8, 3) (9,7)
+    dbg!(&loops_found);
+
+    Ok(loops_found.len() as isize)
 }
 
 #[cfg(test)]

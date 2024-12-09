@@ -12,6 +12,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 miette.workspace = true
 anyhow = "1.0.94"
+rayon.workspace = true
 
 [dev-dependencies]
 divan.workspace = true
